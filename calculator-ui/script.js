@@ -1,6 +1,6 @@
 /**
  * Basic UI Calculator
- * A simple, soft-design calculator with four arithmetic operations.
+ * A soft-design calculator with standard layout - operations on right column.
  */
 
 // Calculator State Object
@@ -31,6 +31,7 @@ function resetCalculator() {
     calculator.operator = null;
     calculator.waitingForSecondOperand = false;
     calculator.hasError = false;
+    clearActiveOperator();
     updateDisplay();
 }
 
@@ -58,6 +59,7 @@ function inputDigit(digit) {
     if (calculator.waitingForSecondOperand) {
         calculator.displayValue = digit;
         calculator.waitingForSecondOperand = false;
+        clearActiveOperator();
     } else {
         calculator.displayValue = calculator.displayValue === '0'
             ? digit
@@ -79,6 +81,7 @@ function inputDecimal() {
     if (calculator.waitingForSecondOperand) {
         calculator.displayValue = '0.';
         calculator.waitingForSecondOperand = false;
+        clearActiveOperator();
         updateDisplay();
         return;
     }
@@ -87,6 +90,62 @@ function inputDecimal() {
     if (!calculator.displayValue.includes('.')) {
         calculator.displayValue += '.';
         updateDisplay();
+    }
+}
+
+/**
+ * Toggle sign of current number (±)
+ */
+function toggleSign() {
+    if (calculator.hasError) {
+        return;
+    }
+
+    if (calculator.displayValue === '0') {
+        return;
+    }
+
+    if (calculator.displayValue.startsWith('-')) {
+        calculator.displayValue = calculator.displayValue.substring(1);
+    } else {
+        calculator.displayValue = '-' + calculator.displayValue;
+    }
+
+    updateDisplay();
+}
+
+/**
+ * Calculate percentage of current number
+ */
+function handlePercent() {
+    if (calculator.hasError) {
+        return;
+    }
+
+    const currentValue = parseFloat(calculator.displayValue);
+    const result = currentValue / 100;
+
+    calculator.displayValue = formatResult(result);
+    updateDisplay();
+}
+
+/**
+ * Clear active state from all operator buttons
+ */
+function clearActiveOperator() {
+    const operators = document.querySelectorAll('.btn-operator');
+    operators.forEach(op => op.classList.remove('active'));
+}
+
+/**
+ * Set active state on operator button
+ * @param {string} operator - The operator value
+ */
+function setActiveOperator(operator) {
+    clearActiveOperator();
+    const operatorBtn = document.querySelector(`.btn-operator[data-value="${operator}"]`);
+    if (operatorBtn) {
+        operatorBtn.classList.add('active');
     }
 }
 
@@ -114,6 +173,7 @@ function handleOperator(nextOperator) {
             calculator.firstOperand = null;
             calculator.operator = null;
             calculator.waitingForSecondOperand = false;
+            clearActiveOperator();
             updateDisplay();
             return;
         }
@@ -126,6 +186,7 @@ function handleOperator(nextOperator) {
 
     calculator.operator = nextOperator;
     calculator.waitingForSecondOperand = true;
+    setActiveOperator(nextOperator);
     updateDisplay();
 }
 
@@ -146,7 +207,7 @@ function calculate(first, second, operator) {
             return first * second;
         case '/':
             if (second === 0) {
-                return 'Cannot divide by zero';
+                return 'Error';
             }
             return first / second;
         default:
@@ -162,7 +223,7 @@ function calculate(first, second, operator) {
 function formatResult(result) {
     // Check for overflow
     if (!isFinite(result)) {
-        return 'Overflow';
+        return 'Error';
     }
 
     // Convert to string and limit length
@@ -209,6 +270,7 @@ function handleEquals() {
         calculator.firstOperand = null;
         calculator.operator = null;
         calculator.waitingForSecondOperand = false;
+        clearActiveOperator();
         updateDisplay();
         return;
     }
@@ -217,6 +279,7 @@ function handleEquals() {
     calculator.firstOperand = result;
     calculator.operator = null;
     calculator.waitingForSecondOperand = false;
+    clearActiveOperator();
     updateDisplay();
 }
 
@@ -250,6 +313,12 @@ function handleButtonClick(event) {
         case 'clear':
             resetCalculator();
             break;
+        case 'sign':
+            toggleSign();
+            break;
+        case 'percent':
+            handlePercent();
+            break;
     }
 }
 
@@ -271,6 +340,8 @@ function handleKeyboard(event) {
         handleEquals();
     } else if (key === 'Escape' || key.toLowerCase() === 'c') {
         resetCalculator();
+    } else if (key === '%') {
+        handlePercent();
     }
 }
 
