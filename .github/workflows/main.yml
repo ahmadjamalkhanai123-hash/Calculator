@@ -1,0 +1,21 @@
+name: Basic CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Build Docker Image
+      run: |
+        docker build -t test-image .
+
+    - name: Run Container (Test)
+      run: |
+        docker run -d -p 8000:8000 test-image
